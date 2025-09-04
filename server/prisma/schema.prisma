@@ -1,0 +1,63 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas = ["voucher"]
+}
+
+
+model Campaign {
+  @@schema("voucher")
+  @@map("campaign")
+
+  id          String             @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+  name        String?
+  prefix      String
+  amountCents Int                @map("amount_cents")
+  currency    String             @db.Char(3)
+  validFrom   DateTime           @map("valid_from")
+  validTo     DateTime           @map("valid_to")
+  createdAt   DateTime           @map("created_at") @default(now())
+  updatedAt   DateTime           @map("updated_at") @updatedAt
+
+  vouchers    Voucher[]
+  batches     GenerationBatch[]
+
+  @@index([prefix], map: "ix_campaign_prefix")
+  @@index([createdAt], map: "ix_campaign_created_at")
+}
+
+model Voucher {
+  @@schema("voucher")
+  @@map("voucher")
+
+  id         String    @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+  campaignId String    @map("campaign_id")
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  code       String    @unique
+  createdAt  DateTime  @map("created_at") @default(now())
+
+  @@index([campaignId], map: "ix_voucher_campaign_id")
+  @@index([createdAt], map: "ix_voucher_created_at")
+}
+
+model GenerationBatch {
+  @@schema("voucher")
+  @@map("generation_batch")
+
+  id             String    @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+  campaignId     String    @map("campaign_id")
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  requestedCount Int       @map("requested_count")
+  generatedCount Int       @map("generated_count")
+  durationMs     Int?      @map("duration_ms")
+  status         String
+  createdAt      DateTime  @map("created_at") @default(now())
+
+  @@index([campaignId], map: "ix_batch_campaign_id")
+  @@index([createdAt], map: "ix_batch_created_at")
+}
