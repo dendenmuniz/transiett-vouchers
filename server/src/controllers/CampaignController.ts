@@ -38,12 +38,12 @@ export const createCampaign = async (
   next: NextFunction
 ) => {
   try {
-    const parsed = CampaignCreateSchema.parse(req.body);
-    const campaign = await campaignRepo.create(parsed);
+    const parsed = CampaignCreateSchema.safeParse(req.body);
+    if (!parsed.success) return next(parsed.error);
+    const campaign = await campaignRepo.create(parsed.data);
     const response = CampaignResponseSchema.parse(campaign);
     res.status(201).json(response);
   } catch (err) {
-     if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 };
@@ -108,12 +108,14 @@ export const createVoucherBatch = async (
 ) => {
   try {
     const { campaignId } = req.params;
-    const { count } = VoucherBatchSchema.parse(req.body)
-    const batch = await voucherService.generateBatch(campaignId, count)
+    const parsed = VoucherBatchSchema.safeParse({ ...req.body, campaignId: req.params.id })
+    if (!parsed.success || typeof parsed.data?.count !== 'number') {
+      return  next(parsed.error);
+    }
+    const batch = await voucherService.generateBatch(campaignId, parsed.data.count)
     const out = VoucherBatchResponseSchema.parse(batch)
     res.status(201).json(out)
   } catch (err) {
-    if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 }
