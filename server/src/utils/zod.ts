@@ -1,7 +1,7 @@
-import { ZodError, ZodIssue } from 'zod';
+import { ZodError } from 'zod';
 
 export function zodIssues(err: ZodError) {
-  return err.issues.map((i: ZodIssue) => ({
+  return err.issues.map((i) => ({
     path: i.path.join('.'),
     code: i.code,          
     message: i.message,     
