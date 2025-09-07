@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createCampaign,
   createVoucherBatch,
+  deleteCampaignById,
   getCampaignById,
   getVoucherById,
   listCampaigns,
@@ -21,6 +22,6 @@ router.get("/campaigns/:campaignId/batches", listVoucherBatches);
 router.get("/campaigns/:campaignId/vouchers", listVouchers);
 
 router.get('/campaigns/:campaignId/vouchers.csv', downloadVouchersCsv)
-
+router.delete("/campaigns/:id", deleteCampaignById);
 router.get('/vouchers/all', downloadAllVouchersCsv)
 router.get("/vouchers/:id", getVoucherById);
