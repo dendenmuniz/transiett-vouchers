@@ -9,6 +9,7 @@ import {
   CampaignCreateSchema,
   CampaignResponseSchema,
   CampaignListResponseSchema,
+  CampaignWithCountSchema,
 } from "../schemas/CampaignSchema";
 import {
   VoucherBatchSchema,
@@ -60,7 +61,15 @@ export const getCampaignById = async (
     if (!campaign) {
       return next(createError("Campaign not found", 404));
     }
-    const response = CampaignResponseSchema.parse(campaign);
+      const { items: batches } = await generationBatchRepo.listByCampaign({
+      campaignId: id,
+      limit: 1,
+    });
+    const voucherCount = batches[0]?.generatedCount ?? 0;
+    const response = CampaignWithCountSchema.parse({
+      ...campaign,
+      voucherCount,
+    });
     res.json(response);
   } catch (err) {
     if (err instanceof ZodError) return next(createError('Validation error', 400, err))
@@ -91,7 +100,22 @@ export const listCampaigns = async (
       cursor,
       limit,
     });
-    const response = CampaignListResponseSchema.parse({ items, nextCursor });
+    const itemsWithCounts = await Promise.all(
+      items.map(async (c) => {
+        const { items: batches } = await generationBatchRepo.listByCampaign({
+          campaignId: c.id,
+          limit: 1, // pega o mais recente
+        });
+        const voucherCount = batches[0]?.generatedCount ?? 0;
+        return { ...c, voucherCount };
+      })
+    );
+
+    // Agora valida já com o campo extra
+    const response = CampaignListResponseSchema.parse({
+      items: itemsWithCounts,
+      nextCursor,
+    });
     res.json(response);
   } catch (err) {
     if (err instanceof ZodError) return next(createError('Validation error', 400, err))
@@ -183,5 +207,23 @@ export const getVoucherById = async (
     next(createError("Invalid request", 400, error));
   }
 };
+
+
+
+export const deleteCampaignById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    await campaignRepo.deleteById(id); 
+    const ok = campaignRepo.findById(id);
+    if (!ok) return next(createError("Campaign not found", 404));
+    return res.status(204).end(); 
+  } catch (err) {
+    next(err);
+  }
+}
 
 
