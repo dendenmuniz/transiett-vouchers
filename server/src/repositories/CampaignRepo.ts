@@ -70,7 +70,7 @@ export class CampaignRepo {
   /**
    * Deletes a campaign (vouchers are removed via cascade)
    */
-  async delete(id: string): Promise<void> {
+  async deleteById(id: string): Promise<void> {
     await prisma.campaign.delete({ where: { id } });
   }
 }
