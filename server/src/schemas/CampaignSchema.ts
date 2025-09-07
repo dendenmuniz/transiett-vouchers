@@ -27,10 +27,15 @@ export const CampaignResponseSchema = z.object({
 
 export type CampaignResponseDTO = z.infer<typeof CampaignResponseSchema>
 
+export const CampaignWithCountSchema = CampaignResponseSchema.extend({
+  voucherCount: z.number().int().nonnegative().optional(),
+});
+
 
 export const CampaignListResponseSchema = z.object({
-  items: z.array(CampaignResponseSchema),
+  items: z.array(CampaignWithCountSchema),
   nextCursor: z.uuid().optional(),
 })
 
 export type CampaignListResponseDTO = z.infer<typeof CampaignListResponseSchema>
+

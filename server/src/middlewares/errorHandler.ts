@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from  'zod'
+import { zodIssues, zodStatus } from '../utils/zod';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -11,6 +13,16 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
+
+  if (err instanceof ZodError) {
+    const statusCode = zodStatus(err);
+    const details = { issues: zodIssues(err) };
+    return res.status(statusCode).json({
+      message: statusCode === 422 ? 'Business rule violation' : 'Invalid request data',
+      details,
+    });
+  }
+  
   console.error(`[ERROR] ${err.message || 'Unknown error'}`);
 
   const statusCode = err.statusCode || 500;
