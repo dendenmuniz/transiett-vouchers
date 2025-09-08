@@ -58,13 +58,13 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     let nextCursor: string | undefined = undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
 
     return { items, nextCursor };
@@ -101,13 +101,13 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     let nextCursor: string | undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
     return { items, nextCursor };
   }

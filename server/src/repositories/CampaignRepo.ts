@@ -59,8 +59,8 @@ export const CampaignRepo = (prisma: PrismaClient): CampaignRepo => ({
 
     let nextCursor: string | undefined = undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
 
     return { items, nextCursor };
