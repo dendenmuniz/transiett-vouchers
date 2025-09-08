@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError  } from "zod";
-import { createError } from "../middlewares/ErrorHandler";
+import { createError } from "../middlewares/errorHandler";
 
 import { CampaignRepo } from "../repositories/CampaignRepo";
 import { VoucherRepo } from "../repositories/VoucherRepo";
@@ -18,18 +18,21 @@ import {
 } from "../schemas/VoucherBatchSchema";
 import { VoucherListResponseSchema, VoucherResponseSchema } from "../schemas/VoucherResponseSchema";
 import { VoucherService } from '../services/VoucherService'
+import { prisma } from '../prisma';
 
 
+const deps = {
+  campaignRepo: CampaignRepo(prisma),
+  voucherRepo:  VoucherRepo(prisma),
+  batchRepo:    GenerationBatchRepo(prisma),
+  // rng/now/chunkSize/maxRetries/codeLen/codeSep — optionals
+};
 
-const campaignRepo = new CampaignRepo();
-const voucherRepo = new VoucherRepo();
-const generationBatchRepo = new GenerationBatchRepo();
+const campaignRepo = CampaignRepo(prisma);
+const voucherRepo = VoucherRepo(prisma);
+const generationBatchRepo =  GenerationBatchRepo(prisma);
 
-const voucherService = new VoucherService({
-  campaignRepo,
-  voucherRepo,
-  batchRepo: generationBatchRepo,
-})
+const voucherService = VoucherService(deps)
 
 
 // Create Campaign
