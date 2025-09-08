@@ -2,3 +2,6 @@ node_modules
 dist/
 .env
 .env.*
+
+/server/tests/setup/.tmp
+/server/coverage
