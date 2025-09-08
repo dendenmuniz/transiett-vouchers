@@ -9,7 +9,7 @@
     "test:cov": "jest --coverage",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p ."
+    "build": "tsc -p tsconfig.json"
   },
   "keywords": [],
   "author": "",
