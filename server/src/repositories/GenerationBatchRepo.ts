@@ -1,58 +1,66 @@
-import { GenerationBatch } from "@prisma/client";
+import { PrismaClient, GenerationBatch } from "@prisma/client";
 
-import { prisma } from "../prisma";
-
-export class GenerationBatchRepo {
-  /**
-   * Creates a new voucher
-   */
-  async create(data: {
+export type GenerationBatchRepo = {
+  create(data: {
     campaignId: string;
     requestedCount: number;
     generatedCount: number;
     durationMs: number;
     status: string;
     createdAt: Date;
-  }): Promise<GenerationBatch> {
-    return prisma.generationBatch.create({
-      data,
-    });
-  }
+  }): Promise<GenerationBatch>;
 
-  async logFinish(data: {
+  logFinish(data: {
     batchId: string;
     generatedCount: number;
     durationMs: number;
     status: string;
-  }): Promise<GenerationBatch | null> {
+  }): Promise<GenerationBatch>;
+
+  findById(id: string): Promise<GenerationBatch | null>;
+
+  listByCampaign(params: {
+    campaignId?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ items: GenerationBatch[]; nextCursor?: string }>;
+
+  delete(id: string): Promise<void>;
+};
+
+export const GenerationBatchRepo = (prisma: PrismaClient): GenerationBatchRepo => ({
+  /**
+   * Creates a new voucher
+   */
+  async create(data): Promise<GenerationBatch> {
+    return prisma.generationBatch.create({
+      data,
+    });
+  },
+
+  async logFinish({batchId, generatedCount, durationMs, status}){
     return prisma.generationBatch.update({
-      where: { id: data.batchId },
+      where: { id: batchId },
       data: {
-        generatedCount: data.generatedCount,
-        durationMs: data.durationMs,
-        status: data.status,
+        generatedCount: generatedCount,
+        durationMs: durationMs,
+        status: status,
       },
     });
-  }
+  },
 
   /**
    * Finds voucher by ID
    */
-  async findById(id: string): Promise<GenerationBatch | null> {
+  async findById(id) {
     return prisma.generationBatch.findUnique({ where: { id } });
-  }
+  },
 
   /**
    * Lists vouchers with basic filters (name/prefix) and pagination
    */
-  async listByCampaign(params: {
-    campaignId?: string;
-    cursor?: string;
-    limit?: number;
-  }): Promise<{ items: GenerationBatch[]; nextCursor?: string }> {
-    const { campaignId, cursor, limit = 20 } = params;
-
-    const items = await prisma.generationBatch.findMany({
+  async listByCampaign({campaignId, cursor,  limit = 20 }) {
+        const items = await prisma.generationBatch.findMany({
       where: {campaignId},
       // fetch one extra to check if there is a next page
       take: limit + 1,
@@ -68,12 +76,12 @@ export class GenerationBatchRepo {
     }
 
     return { items, nextCursor };
-  }
+  },
 
   /**
    * Deletes a voucher (vouchers are removed via cascade)
    */
-  async delete(id: string): Promise<void> {
+  async delete(id) {
     await prisma.generationBatch.delete({ where: { id } });
   }
-}
+})

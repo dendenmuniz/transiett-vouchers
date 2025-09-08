@@ -2,10 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { csvEscape } from '../utils/csv'
 import { CampaignRepo } from '../repositories/CampaignRepo'
 import { VoucherRepo } from '../repositories/VoucherRepo'
-import { createError} from '../middlewares/ErrorHandler'
+import { createError} from '../middlewares/errorHandler'
+import { prisma } from '../prisma';
 
-const campaignRepo = new CampaignRepo();
-const voucherRepo = new VoucherRepo();
+const campaignRepo =  CampaignRepo(prisma);
+const voucherRepo =  VoucherRepo(prisma);
 
 
 export const downloadVouchersCsv = async (  req: Request,

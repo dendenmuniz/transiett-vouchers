@@ -1,48 +1,47 @@
-import { Campaign } from "@prisma/client";
+import type { PrismaClient, Campaign } from '@prisma/client';
 
-import { prisma } from "../prisma";
-
-export class CampaignRepo {
-  /**
-   * Creates a new campaign
-   */
-  async create(data: {
+export type CampaignRepo = {
+  create(data: {
     name?: string;
     prefix: string;
     amountCents: number;
     currency: string;
     validFrom: Date;
     validTo: Date;
-  }): Promise<Campaign> {
-    return prisma.campaign.create({
-      data: {
-        name: data.name,
-        prefix: data.prefix,
-        amountCents: data.amountCents,
-        currency: data.currency,
-        validFrom: data.validFrom,
-        validTo: data.validTo,
-      },
-    });
-  }
+  }): Promise<Campaign>;
+
+  findById(id: string): Promise<Campaign | null>;
+
+  list(params: {
+    search?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ items: Campaign[]; nextCursor?: string }>;
+
+  deleteById(id: string): Promise<void>;
+};
+
+export const CampaignRepo = (prisma: PrismaClient): CampaignRepo => ({
+
+  /**
+   * Creates a new campaign
+   */
+  async create(data) {
+    return prisma.campaign.create({data});
+  },
 
   /**
    * Finds campaign by ID
    */
-  async findById(id: string): Promise<Campaign | null> {
+  async findById(id) {
     return prisma.campaign.findUnique({ where: { id } });
-  }
+  },
 
   /**
    * Lists campaigns with basic filters (name/prefix) and pagination
    */
-  async list(params: {
-    search?: string;
-    cursor?: string;
-    limit?: number;
-  }): Promise<{ items: Campaign[]; nextCursor?: string }> {
-    const { search, cursor, limit = 20 } = params;
-
+  async list({search, cursor, limit = 20}): Promise<{ items: Campaign[]; nextCursor?: string }> {
+    
     const items = await prisma.campaign.findMany({
       where: search
         ? {
@@ -52,25 +51,25 @@ export class CampaignRepo {
             ],
           }
         : undefined,
-      // fetch one extra to check if there is a next page
+      take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     let nextCursor: string | undefined = undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
 
     return { items, nextCursor };
-  }
+  },
 
   /**
    * Deletes a campaign (vouchers are removed via cascade)
    */
-  async deleteById(id: string): Promise<void> {
+  async deleteById(id) {
     await prisma.campaign.delete({ where: { id } });
   }
-}
+})

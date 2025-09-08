@@ -1,39 +1,54 @@
-import { Voucher } from "@prisma/client";
-import { prisma } from "../prisma";
+import { PrismaClient, Voucher } from "@prisma/client";
+export type VoucherRepo = {
+  bulkInsert(records: { campaignId: string; code: string; createdAt: Date }[]): Promise<{ count: number }>;
 
-export class VoucherRepo {
-  /**
-   * Creates a new voucher
-   */
-  async bulkInsert(
-    records: { campaignId: string; code: string; createdAt: Date }[]
-  ) {
-    if (records.length === 0) return [];
+  findById(id: string): Promise<Voucher | null>;
 
-    return prisma.voucher.createMany({
-      data: records,
-      skipDuplicates: true, // dismiss duplicates
-    });
-  }
-
-  /**
-   * Finds voucher by ID
-   */
-  async findById(id: string): Promise<Voucher | null> {
-    return prisma.voucher.findUnique({ where: { id } });
-  }
-
-  /**
-   * Lists vouchers with basic filters (name/prefix) and pagination
-   */
-  async listByCampaign(params: {
+  listByCampaign(params: {
     campaignId?: string;
     cursor?: string;
     limit?: number;
     search?: string;
-  }): Promise<{ items: Voucher[]; nextCursor?: string }> {
-    const { campaignId, search, cursor, limit = 20 } = params;
+  }): Promise<{ items: Voucher[]; nextCursor?: string }>;
 
+  delete(id: string): Promise<void>;
+
+  listAll(params: {
+    cursor?: string;
+    limit?: number;
+    search?: string;
+  }): Promise<{
+    items: (Voucher & {
+      campaign: { prefix: string; amountCents: number; currency: string };
+    })[];
+    nextCursor?: string;
+  }>;
+};
+
+export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
+  /**
+   * Creates a new voucher
+   */
+   async bulkInsert(records) {
+    if (!records.length) return { count: 0 };
+    return prisma.voucher.createMany({
+      data: records,
+      skipDuplicates: true,
+    });
+  },
+
+  /**
+   * Finds voucher by ID
+   */
+  async findById(id) {
+    return prisma.voucher.findUnique({ where: { id } });
+  },
+
+  /**
+   * Lists vouchers with basic filters (name/prefix) and pagination
+   */
+  async listByCampaign({campaignId, cursor, limit = 20 , search }) {
+  
     const items = await prisma.voucher.findMany({
       where: {
         campaignId,
@@ -43,40 +58,30 @@ export class VoucherRepo {
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     let nextCursor: string | undefined = undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
 
     return { items, nextCursor };
-  }
+  },
 
   /**
    * Deletes a voucher (vouchers are removed via cascade)
    */
-  async delete(id: string): Promise<void> {
+  async delete(id) {
     await prisma.voucher.delete({ where: { id } });
-  }
+  },
 
   /**
    * List all vouchers
    */
-  async listAll(params: {
-    cursor?: string;
-    limit?: number;
-    search?: string; // opcional: por code ou prefix da campanha
-  }): Promise<{
-    items: (Voucher & {
-      campaign: { prefix: string; amountCents: number; currency: string };
-    })[];
-    nextCursor?: string;
-  }> {
-    const { cursor, limit = 1000, search } = params;
-
+  async listAll({cursor, limit = 20, search}){
+    
     const items = await prisma.voucher.findMany({
       where: search
         ? {
@@ -96,14 +101,14 @@ export class VoucherRepo {
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     let nextCursor: string | undefined;
     if (items.length > limit) {
-      const nextItem = items.pop()!;
-      nextCursor = nextItem.id;
+      items.pop();                                  
+      nextCursor = items[items.length - 1]?.id; 
     }
     return { items, nextCursor };
   }
-}
+})
