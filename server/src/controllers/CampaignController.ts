@@ -16,7 +16,7 @@ import {
   VoucherBatchResponseSchema,
   VoucherBatchListResponseSchema,
 } from "../schemas/VoucherBatchSchema";
-import { VoucherListResponseSchema, VoucherResponseSchema } from "../schemas/VoucherResponseSchema";
+import { VoucherListResponseSchema, VoucherResponseSchema, VouchersByCampaignSchema } from "../schemas/VoucherResponseSchema";
 import { VoucherService } from '../services/VoucherService'
 import { prisma } from '../prisma';
 
@@ -75,7 +75,6 @@ export const getCampaignById = async (
     });
     res.json(response);
   } catch (err) {
-    if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 };
@@ -88,7 +87,6 @@ export const listCampaigns = async (
 ) => {
   try {
     const search = req.query.search as string | undefined;
-
     const cursor = req.query.cursor as string | undefined;
     const limit = req.query.limit
       ? parseInt(req.query.limit as string, 10)
@@ -114,14 +112,13 @@ export const listCampaigns = async (
       })
     );
 
-    // Agora valida já com o campo extra
+    
     const response = CampaignListResponseSchema.parse({
       items: itemsWithCounts,
       nextCursor,
     });
     res.json(response);
   } catch (err) {
-    if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 };
@@ -166,7 +163,6 @@ export const listVoucherBatches = async (
     const out = VoucherBatchListResponseSchema.parse({ items, nextCursor })
     res.json(out)
   } catch (err) {
-    if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 }
@@ -186,10 +182,10 @@ const cursor = (req.query.cursor as string) || undefined
     }
 
     const { items, nextCursor } = await voucherRepo.listByCampaign({ campaignId, cursor, limit })
-    const out = VoucherListResponseSchema.parse({ items, nextCursor })
+    const out = VouchersByCampaignSchema.parse({ items, nextCursor })
+    
     res.json(out)
   } catch (err) {
-    if (err instanceof ZodError) return next(createError('Validation error', 400, err))
     next(err)
   }
 }
@@ -204,7 +200,7 @@ export const getVoucherById = async (
     const { id } = req.params;
     const voucher = await voucherRepo.findById(id);
     if (!voucher) return next(createError('Voucher not found', 404))
-    const out = VoucherResponseSchema.parse(voucher)        
+    const out = VoucherListResponseSchema.parse(voucher)        
     res.json(out)
   } catch (error) {
     next(createError("Invalid request", 400, error));

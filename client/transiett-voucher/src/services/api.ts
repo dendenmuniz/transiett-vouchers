@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Campaign, Paginated, Voucher } from "../types";
+import type { Campaign, Paginated, Voucher, VoucherWithCampaign } from "../types";
 
 type BatchResult = {
   requestedCount: number;
@@ -25,7 +25,7 @@ api.interceptors.response.use(
       error?.message ??
       `HTTP ${status ?? "error"}`;
 
-  
+
     const issues = data?.details?.issues as Array<{ path?: string; message?: string }> | undefined;
     let pretty: string | undefined;
     if (issues?.length) {
@@ -45,9 +45,10 @@ api.interceptors.response.use(
 
 export const apiService = {
   // Campaigns
-  async listCampaigns(): Promise<Campaign[]> {
-    const res = await api.get<CampaignListResponse>("/campaigns");
-    return res.data.items ?? [];
+  async listCampaigns(limit = 50, cursor?: string, search?: string): Promise<Paginated<Campaign>> {
+    const params = { limit, search }
+    const res = await api.get<CampaignListResponse>("/campaigns", { params });
+    return res.data;
   },
 
   async createCampaign(data: Partial<Campaign>): Promise<Campaign> {
@@ -70,12 +71,20 @@ export const apiService = {
     return res.data;
   },
 
-  async listVouchers(id: string, limit = 50, cursor?: string): Promise<Paginated<Voucher>> {
+  async listVouchers(id: string, limit = 50, cursor?: string, search?: string): Promise<Paginated<Voucher>> {
     const res = await api.get<Paginated<Voucher>>(`/campaigns/${id}/vouchers`, {
-      params: { limit, cursor },
+      params: { limit, cursor, search },
     });
     return res.data;
   },
+
+  async listAllVouchers(limit = 50, cursor?: string, search?: string): Promise<Paginated<VoucherWithCampaign>> {
+    const res = await api.get<Paginated<VoucherWithCampaign>>(`/vouchers/all`, {
+      params: { limit, cursor, search },
+    });
+    return res.data;
+  },
+
 
   // CSV
   csvUrl(id: string): string {

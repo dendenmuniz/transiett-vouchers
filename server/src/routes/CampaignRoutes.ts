@@ -10,7 +10,7 @@ import {
   listVouchers,
 } from "../controllers/CampaignController";
 
-import { downloadVouchersCsv, downloadAllVouchersCsv } from '../controllers/VoucherController'
+import { downloadVouchersCsv, downloadAllVouchersCsv, listAllVouchers } from '../controllers/VoucherController'
 
 export const router = Router();
 router.post("/campaigns", createCampaign);
@@ -23,5 +23,6 @@ router.get("/campaigns/:campaignId/vouchers", listVouchers);
 
 router.get('/campaigns/:campaignId/vouchers.csv', downloadVouchersCsv)
 router.delete("/campaigns/:id", deleteCampaignById);
-router.get('/vouchers/all', downloadAllVouchersCsv)
+router.get('/vouchers/download/all', downloadAllVouchersCsv)
+router.get('/vouchers/all', listAllVouchers )
 router.get("/vouchers/:id", getVoucherById);
