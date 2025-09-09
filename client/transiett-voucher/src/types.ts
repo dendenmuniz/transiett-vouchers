@@ -18,4 +18,14 @@ export type Voucher = {
   createdAt: string;
 };
 
-export type Paginated<T> = { items: T[]; nextCursor?: string | null };
+type CampaignMeta = Pick<Campaign, 'prefix' | 'amountCents' | 'currency' | 'validTo'>;
+
+export type VoucherWithCampaign = {
+  id: string;
+  campaignId: string;
+  code: string;
+  createdAt: string;
+  campaign: CampaignMeta
+ };
+
+export type Paginated<T> = { items: T[]; nextCursor?: string | null, total?: number };
