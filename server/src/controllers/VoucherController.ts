@@ -4,6 +4,7 @@ import { CampaignRepo } from '../repositories/CampaignRepo'
 import { VoucherRepo } from '../repositories/VoucherRepo'
 import { createError} from '../middlewares/errorHandler'
 import { prisma } from '../prisma';
+import { VoucherListResponseSchema } from "../schemas/VoucherResponseSchema";
 
 const campaignRepo =  CampaignRepo(prisma);
 const voucherRepo =  VoucherRepo(prisma);
@@ -52,6 +53,7 @@ export const downloadVouchersCsv = async (  req: Request,
             csvEscape(campaign.prefix),
             csvEscape(campaign.amountCents),
             csvEscape(campaign.currency),
+            csvEscape(campaign.validTo),
             csvEscape(v.createdAt.toISOString()),
           ].join(',') + '\n'
         )
@@ -95,6 +97,7 @@ export const downloadAllVouchersCsv = async (req: Request, res: Response, next: 
             csvEscape(v.campaign.prefix),
             csvEscape(v.campaign.amountCents),
             csvEscape(v.campaign.currency),
+            csvEscape(v.campaign.validTo),
             csvEscape(v.createdAt.toISOString()),
           ].join(',') + '\n'
         )
@@ -106,6 +109,40 @@ export const downloadAllVouchersCsv = async (req: Request, res: Response, next: 
     }
 
     res.end()
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const listAllVouchers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const search = req.query.search as string | undefined;
+    const cursor = req.query.cursor as string | undefined;
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string, 10)
+      : undefined;
+    if (limit !== undefined && (isNaN(limit) || limit <= 0 || limit > 100)) {
+      return next(
+        createError("Limit must be a positive number up to 100", 400)
+      );
+    }
+    const { items, nextCursor, total } = await voucherRepo.listAll({
+      search,
+      cursor,
+      limit,
+    });
+
+
+    const response = VoucherListResponseSchema.parse({
+      items: items,
+      nextCursor,
+      total,
+    });
+    res.json(response);
   } catch (err) {
     next(err)
   }

@@ -1,6 +1,9 @@
 import { PrismaClient, Voucher } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 export type VoucherRepo = {
-  bulkInsert(records: { campaignId: string; code: string; createdAt: Date }[]): Promise<{ count: number }>;
+  bulkInsert(
+    records: { campaignId: string; code: string; createdAt: Date }[]
+  ): Promise<{ count: number }>;
 
   findById(id: string): Promise<Voucher | null>;
 
@@ -19,9 +22,15 @@ export type VoucherRepo = {
     search?: string;
   }): Promise<{
     items: (Voucher & {
-      campaign: { prefix: string; amountCents: number; currency: string };
+      campaign: {
+        prefix: string;
+        amountCents: number;
+        currency: string;
+        validTo: Date;
+      };
     })[];
     nextCursor?: string;
+    total?: number
   }>;
 };
 
@@ -29,7 +38,7 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
   /**
    * Creates a new voucher
    */
-   async bulkInsert(records) {
+  async bulkInsert(records) {
     if (!records.length) return { count: 0 };
     return prisma.voucher.createMany({
       data: records,
@@ -47,8 +56,7 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
   /**
    * Lists vouchers with basic filters (name/prefix) and pagination
    */
-  async listByCampaign({campaignId, cursor, limit = 20 , search }) {
-  
+  async listByCampaign({ campaignId, cursor, limit = 20, search }) {
     const items = await prisma.voucher.findMany({
       where: {
         campaignId,
@@ -58,15 +66,14 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
 
     let nextCursor: string | undefined = undefined;
     if (items.length > limit) {
-      items.pop();                                  
-      nextCursor = items[items.length - 1]?.id; 
+      items.pop();
+      nextCursor = items[items.length - 1]?.id;
     }
-
     return { items, nextCursor };
   },
 
@@ -80,35 +87,52 @@ export const VoucherRepo = (prisma: PrismaClient): VoucherRepo => ({
   /**
    * List all vouchers
    */
-  async listAll({cursor, limit = 20, search}){
-    
-    const items = await prisma.voucher.findMany({
-      where: search
-        ? {
-            OR: [
-              { code: { contains: search, mode: "insensitive" } },
-              {
-                campaign: { prefix: { contains: search, mode: "insensitive" } },
+  async listAll({ cursor, limit = 20, search }) {
+
+    const where: Prisma.VoucherWhereInput | undefined =  search
+    ? {
+        OR: [
+          { code: { contains: search, mode: 'insensitive' } },
+          {
+            campaign: {
+              is: { // 👈 RELAÇÃO 1-1 precisa de "is"
+                prefix: { contains: search, mode: 'insensitive' },
               },
-            ],
-          }
-        : undefined,
-      include: {
-        campaign: {
-          select: { prefix: true, amountCents: true, currency: true },
+            },
+          },
+        ],
+      }
+    : undefined;
+
+    const [items, total] = await prisma.$transaction([
+      prisma.voucher.findMany({
+        where,
+
+        include: {
+          campaign: {
+            select: {
+              prefix: true,
+              amountCents: true,
+              currency: true,
+              validTo: true,
+            },
+          },
         },
-      },
-      take: limit + 1,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    });
+        take: limit + 1,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      }),
+      prisma.voucher.count({
+        where
+      }),
+    ]);
 
     let nextCursor: string | undefined;
     if (items.length > limit) {
-      items.pop();                                  
-      nextCursor = items[items.length - 1]?.id; 
+      items.pop();
+      nextCursor = items[items.length - 1]?.id;
     }
-    return { items, nextCursor };
-  }
-})
+    return { items, nextCursor, total };
+  },
+});

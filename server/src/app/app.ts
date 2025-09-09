@@ -5,7 +5,7 @@ import compression from 'compression';
 import zlib from 'zlib';
 
 import { router } from '../routes';
-import { createError, errorHandler } from '../middlewares/ErrorHandler';
+import { createError, errorHandler } from '../middlewares/errorHandler';
 
 export function buildApp(deps?: any) {
   const app = express();
