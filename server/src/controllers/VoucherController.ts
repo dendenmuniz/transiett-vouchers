@@ -30,7 +30,7 @@ export const downloadVouchersCsv = async (  req: Request,
     res.status(200)
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.write('code,campaignId,prefix,amountCents,currency,createdAt\n')
+    res.write('code,campaignId,prefix,amountCents,currency,validTo,createdAt\n')
 
     // 3) paging (streaming) — avoids loading everything into memory
     const pageSize = 5000
@@ -53,7 +53,7 @@ export const downloadVouchersCsv = async (  req: Request,
             csvEscape(campaign.prefix),
             csvEscape(campaign.amountCents),
             csvEscape(campaign.currency),
-            csvEscape(campaign.validTo),
+            csvEscape(campaign.validTo.toISOString()),
             csvEscape(v.createdAt.toISOString()),
           ].join(',') + '\n'
         )
@@ -80,7 +80,7 @@ export const downloadAllVouchersCsv = async (req: Request, res: Response, next: 
     res.status(200)
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.write('code,campaignId,prefix,amountCents,currency,createdAt\n')
+    res.write('code,campaignId,prefix,amountCents,currency,validTo,createdAt\n')
     
     const pageSize = 20000
     let cursor: string | undefined
@@ -97,7 +97,7 @@ export const downloadAllVouchersCsv = async (req: Request, res: Response, next: 
             csvEscape(v.campaign.prefix),
             csvEscape(v.campaign.amountCents),
             csvEscape(v.campaign.currency),
-            csvEscape(v.campaign.validTo),
+            csvEscape(v.campaign.validTo.toISOString()),
             csvEscape(v.createdAt.toISOString()),
           ].join(',') + '\n'
         )
