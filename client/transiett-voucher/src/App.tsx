@@ -1,7 +1,6 @@
 import {
   Route,
   BrowserRouter,
-  Link,
   Routes,
 } from "react-router-dom";
 import { CampaignsPage } from './pages/CampaignsPage'

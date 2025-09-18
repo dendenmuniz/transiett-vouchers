@@ -37,15 +37,14 @@ export const CampaignDetail = () => {
     []
   );
 
-  // loader para vouchers desta campanha (usa cursor/limit/search do Table)
+
   const loader: Loader<Voucher> = async ({ cursor, limit, search }) => {
+    console.log(search)
     if (!id) return { items: [], nextCursor: undefined };
-    const res = await apiService.listVouchers(
-      id,
-      limit,
-      cursor,
-      search?.trim() || undefined
-    );
+    const res = await apiService.listVouchers(id, limit, cursor, search?.trim() || undefined);
+    if (Array.isArray(res)) {
+      return { items: res, nextCursor: undefined };
+    }
     return {
       items: res.items,
       nextCursor: res.nextCursor ?? undefined,
@@ -104,37 +103,37 @@ export const CampaignDetail = () => {
         </div>
       </header>
 
-      <div className=" max-w-96 sm:max-w-4xl mx-auto border border-[#D1D5DB] rounded-lg p-8"> 
-        <h2 className="text-xl font-semibold">{campaign.name || 'Campaign'}</h2> 
+      <div className=" max-w-96 sm:max-w-4xl mx-auto border border-[#D1D5DB] rounded-lg p-8">
+        <h2 className="text-xl font-semibold">{campaign.name || 'Campaign'}</h2>
         <label className="text-sm font-medium text-gray-700 mb-1">Prefix</label>
-        <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 ">{campaign.prefix}</p> 
+        <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 ">{campaign.prefix}</p>
         <label className="text-sm font-medium text-gray-700 mb-1">Amount</label>
         <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 ">{campaign.amountCents}</p>
-         <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 "><span className='text-sm font-medium text-gray-700'>Valid from</span> {campaign.validFrom.slice(0, 10)} to {campaign.validTo.slice(0, 10)}</p> 
-         <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 "><span className='text-sm font-medium text-gray-700'>Qtd vouchers</span> {campaign.voucherCount}</p> 
-         
-         </div>
-    {(campaign?.voucherCount ?? 0) === 0  && (
-      <div className="max-w-4xl mx-auto border border-gray-200 rounded-lg p-6">
-        <section className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Batch size</label>
-            <input
-              type="number"
-              value={count}
-              onChange={(e) => setCount(+e.target.value)}
-              className="h-10 rounded border border-gray-300 px-2"
-            />
-          </div>
-          <button
-            onClick={gen}
-            className="h-10 bg-gray-700 text-white rounded px-4 hover:bg-gray-800"
-          >
-            Generate vouchers
-          </button>
-        </section>
+        <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 "><span className='text-sm font-medium text-gray-700'>Valid from</span> {campaign.validFrom.slice(0, 10)} to {campaign.validTo.slice(0, 10)}</p>
+        <p className="text-md xs:text-sm font-medium text-gray-900 mb-1 "><span className='text-sm font-medium text-gray-700'>Qtd vouchers</span> {campaign.voucherCount}</p>
+
       </div>
-)}
+      {(campaign?.voucherCount ?? 0) === 0 && (
+        <div className="max-w-4xl mx-auto border border-gray-200 rounded-lg p-6">
+          <section className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Batch size</label>
+              <input
+                type="number"
+                value={count}
+                onChange={(e) => setCount(+e.target.value)}
+                className="h-10 rounded border border-gray-300 px-2"
+              />
+            </div>
+            <button
+              onClick={gen}
+              className="h-10 bg-gray-700 text-white rounded px-4 hover:bg-gray-800"
+            >
+              Generate vouchers
+            </button>
+          </section>
+        </div>
+      )}
       <section>
         <Table<Voucher>
           key={refreshKey}

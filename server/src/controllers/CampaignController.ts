@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodError  } from "zod";
+import { ZodError } from "zod";
 import { createError } from "../middlewares/errorHandler";
 
 import { CampaignRepo } from "../repositories/CampaignRepo";
@@ -23,14 +23,14 @@ import { prisma } from '../prisma';
 
 const deps = {
   campaignRepo: CampaignRepo(prisma),
-  voucherRepo:  VoucherRepo(prisma),
-  batchRepo:    GenerationBatchRepo(prisma),
+  voucherRepo: VoucherRepo(prisma),
+  batchRepo: GenerationBatchRepo(prisma),
   // rng/now/chunkSize/maxRetries/codeLen/codeSep — optionals
 };
 
 const campaignRepo = CampaignRepo(prisma);
 const voucherRepo = VoucherRepo(prisma);
-const generationBatchRepo =  GenerationBatchRepo(prisma);
+const generationBatchRepo = GenerationBatchRepo(prisma);
 
 const voucherService = VoucherService(deps)
 
@@ -64,7 +64,7 @@ export const getCampaignById = async (
     if (!campaign) {
       return next(createError("Campaign not found", 404));
     }
-      const { items: batches } = await generationBatchRepo.listByCampaign({
+    const { items: batches } = await generationBatchRepo.listByCampaign({
       campaignId: id,
       limit: 1,
     });
@@ -112,7 +112,7 @@ export const listCampaigns = async (
       })
     );
 
-    
+
     const response = CampaignListResponseSchema.parse({
       items: itemsWithCounts,
       nextCursor,
@@ -134,7 +134,7 @@ export const createVoucherBatch = async (
     const { campaignId } = req.params;
     const parsed = VoucherBatchSchema.safeParse({ ...req.body, campaignId: req.params.id })
     if (!parsed.success || typeof parsed.data?.count !== 'number') {
-      return  next(parsed.error);
+      return next(parsed.error);
     }
     const batch = await voucherService.generateBatch(campaignId, parsed.data.count)
     const out = VoucherBatchResponseSchema.parse(batch)
@@ -175,15 +175,17 @@ export const listVouchers = async (
 ) => {
   try {
     const { campaignId } = req.params;
-const cursor = (req.query.cursor as string) || undefined
+    const search = req.query.search as string | undefined
+    const cursor = (req.query.cursor as string) || undefined
     const limit = req.query.limit ? Number(req.query.limit) : 50
+
     if (!Number.isFinite(limit) || limit <= 0 || limit > 1000) {
       return next(createError('Limit must be 1..1000', 400))
     }
-
-    const { items, nextCursor } = await voucherRepo.listByCampaign({ campaignId, cursor, limit })
+    console.log('consotrler', search)
+    const { items, nextCursor } = await voucherRepo.listByCampaign({ campaignId, cursor, limit, search })
     const out = VouchersByCampaignSchema.parse({ items, nextCursor })
-    
+
     res.json(out)
   } catch (err) {
     next(err)
@@ -200,7 +202,7 @@ export const getVoucherById = async (
     const { id } = req.params;
     const voucher = await voucherRepo.findById(id);
     if (!voucher) return next(createError('Voucher not found', 404))
-    const out = VoucherListResponseSchema.parse(voucher)        
+    const out = VoucherListResponseSchema.parse(voucher)
     res.json(out)
   } catch (error) {
     next(createError("Invalid request", 400, error));
@@ -216,10 +218,10 @@ export const deleteCampaignById = async (
 ) => {
   try {
     const { id } = req.params;
-    await campaignRepo.deleteById(id); 
+    await campaignRepo.deleteById(id);
     const ok = campaignRepo.findById(id);
     if (!ok) return next(createError("Campaign not found", 404));
-    return res.status(204).end(); 
+    return res.status(204).end();
   } catch (err) {
     next(err);
   }
