@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Table, type Column, type Loader } from '../components/Table'
-import type { Voucher, VoucherWithCampaign } from '../types';
+import type { VoucherWithCampaign } from '../types';
 import { apiService } from '../services/api';
 
 export const VouchersPage = () => {

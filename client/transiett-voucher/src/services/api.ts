@@ -46,7 +46,7 @@ api.interceptors.response.use(
 export const apiService = {
   // Campaigns
   async listCampaigns(limit = 50, cursor?: string, search?: string): Promise<Paginated<Campaign>> {
-    const params = { limit, search }
+    const params = { limit, search, cursor }
     const res = await api.get<CampaignListResponse>("/campaigns", { params });
     return res.data;
   },
