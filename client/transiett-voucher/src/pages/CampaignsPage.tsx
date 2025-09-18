@@ -63,35 +63,6 @@ export const CampaignsPage = () => {
     return { message, fieldErrors };
   }
 
-  const toClientError = (err: any): { message: string; fieldErrors: Record<string, string> } => {
-    let message = 'Something went wrong. Try again, please.';
-    const fieldErrors: Record<string, string> = {};
-
-    const data = err?.response?.data ?? err?.data ?? err;
-    if (data) {
-      if (typeof data.message === 'string') message = data.message;
-
-      const issues = data?.details?.issues
-        ?? data?.issues
-        ?? data?.errors
-        ?? [];
-      if (Array.isArray(issues)) {
-        for (const it of issues) {
-          const path = typeof it?.path === 'string'
-            ? it.path
-            : Array.isArray(it?.path) ? it.path.join('.') : '';
-          const msg = it?.message ?? it?.code ?? 'Inválido';
-          if (path) fieldErrors[path] = msg;
-        }
-      }
-      if (data.fieldErrors && typeof data.fieldErrors === 'object') {
-        Object.assign(fieldErrors, data.fieldErrors);
-      }
-    }
-
-    return { message, fieldErrors };
-  }
-
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -217,7 +188,6 @@ export const CampaignsPage = () => {
               placeholder="Name (optional)"
               value={form.name}
               name="name"
-              name="name"
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
             <input
@@ -226,7 +196,7 @@ export const CampaignsPage = () => {
               placeholder="PREFIX (A–Z)"
               value={form.prefix}
               name="prefix"
-              name="prefix"
+
               onChange={(e) => setForm((f) => ({ ...f, prefix: e.target.value }))}
             />
 
@@ -236,7 +206,6 @@ export const CampaignsPage = () => {
               type="number"
               className="h-[50px] rounded-[5px] text-md xs:text-sm border border-[#D1D5DB] w-full px-2"
               placeholder="Amount (cents)"
-              name="amountCents"
               name="amountCents"
               value={form.amountCents}
               onChange={(e) => setForm((f) => ({ ...f, amountCents: +e.target.value }))}
@@ -248,14 +217,12 @@ export const CampaignsPage = () => {
               placeholder="Currency (ISO)"
               value={form.currency}
               name="currency"
-              name="currency"
               onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
             />
 
 
             <input
               required
-              name="validFrom"
               name="validFrom"
               type="datetime-local"
               className="h-[50px] rounded-[5px] text-md xs:text-sm border border-[#D1D5DB] w-full px-2"
@@ -266,7 +233,6 @@ export const CampaignsPage = () => {
 
             <input
               required
-              name="validTo"
               name="validTo"
               type="datetime-local"
               className="h-[50px] rounded-[5px] text-md xs:text-sm border border-[#D1D5DB] w-full px-2"
